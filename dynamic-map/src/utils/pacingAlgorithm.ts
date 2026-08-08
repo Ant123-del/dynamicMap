@@ -28,10 +28,11 @@ const OSCILLATION_PERIOD_BY_RATE: Record<RateOfChange, number> = {
   High: 3,
 }
 
-const AMPLITUDE_BY_RATE: Record<RateOfChange, number> = {
-  Low: 1,
-  Medium: 1.5,
-  High: 2.5,
+/** Fraction of the half-range (max - min) / 2 that the oscillation swings by. */
+const AMPLITUDE_FRACTION_BY_RATE: Record<RateOfChange, number> = {
+  Low: 0.4,
+  Medium: 0.7,
+  High: 1,
 }
 
 function distance(a: MapCoordinates, b: MapCoordinates): number {
@@ -51,36 +52,47 @@ export function randomCoordinate(existing: MapCoordinates[]): MapCoordinates {
   return candidate
 }
 
-export function clampLevel(level: number, cognitiveLimit: CognitiveLevel): CognitiveLevel {
-  return Math.min(cognitiveLimit, Math.max(1, Math.round(level))) as CognitiveLevel
+export function clampLevel(
+  level: number,
+  minLevel: CognitiveLevel,
+  maxLevel: CognitiveLevel,
+): CognitiveLevel {
+  return Math.min(maxLevel, Math.max(minLevel, Math.round(level))) as CognitiveLevel
 }
 
-function baseLevelForSeason(entrySeason: Season, cognitiveLimit: CognitiveLevel): number {
+function baseLevelForSeason(
+  entrySeason: Season,
+  minLevel: CognitiveLevel,
+  maxLevel: CognitiveLevel,
+): number {
+  const midpoint = (minLevel + maxLevel) / 2
   switch (entrySeason) {
     case 'Battle':
-      return cognitiveLimit - 1
+      return maxLevel - 1
     case 'Exhaustion/Recovery':
-      return 2
+      return minLevel
     case 'Flow':
     default:
-      return Math.ceil(cognitiveLimit / 2) + 1
+      return midpoint
   }
 }
 
-/** Builds the oscillating Level 2 -> 3 -> 4 -> 2 style loop, clamped to the cognitive limit. */
+/** Builds the oscillating Level 2 -> 3 -> 4 -> 2 style loop, ranging between the min and max load. */
 export function buildLevelSequence(
   count: number,
-  cognitiveLimit: CognitiveLevel,
+  minLevel: CognitiveLevel,
+  maxLevel: CognitiveLevel,
   entrySeason: Season,
   rateOfChange: RateOfChange,
 ): CognitiveLevel[] {
-  const base = baseLevelForSeason(entrySeason, cognitiveLimit)
-  const amplitude = AMPLITUDE_BY_RATE[rateOfChange]
+  const base = baseLevelForSeason(entrySeason, minLevel, maxLevel)
+  const halfRange = Math.max((maxLevel - minLevel) / 2, 0.5)
+  const amplitude = halfRange * AMPLITUDE_FRACTION_BY_RATE[rateOfChange]
   const period = OSCILLATION_PERIOD_BY_RATE[rateOfChange]
 
   return Array.from({ length: count }, (_, i) => {
     const wave = base + amplitude * Math.sin((2 * Math.PI * i) / period)
-    return clampLevel(wave, cognitiveLimit)
+    return clampLevel(wave, minLevel, maxLevel)
   })
 }
 
@@ -88,13 +100,14 @@ export function kindForLevel(
   index: number,
   count: number,
   level: CognitiveLevel,
-  cognitiveLimit: CognitiveLevel,
+  minLevel: CognitiveLevel,
+  maxLevel: CognitiveLevel,
   entrySeason: Season,
 ): PitstopKind {
   if (index === 0) return 'start'
   if (index === count - 1) return 'end'
-  if (entrySeason === 'Exhaustion/Recovery' && level <= 2) return 'recovery'
-  if (level >= cognitiveLimit) return 'peak'
+  if (entrySeason === 'Exhaustion/Recovery' && level <= minLevel) return 'recovery'
+  if (level >= maxLevel) return 'peak'
   return 'work'
 }
 
@@ -144,13 +157,15 @@ export function layoutSchedule(count: number, startMs: number, durationMs: numbe
 export function generateInitialPath(task: Task): PacingPath {
   const totalDurationMs = task.durationMinutes * 60_000
   const count = pitstopCountFor(task.durationMinutes, task.rateOfChange)
-  const levels = buildLevelSequence(count, task.cognitiveLimit, task.entrySeason, task.rateOfChange)
+  const minLevel = Math.min(task.minCognitiveLevel, task.cognitiveLimit) as CognitiveLevel
+  const maxLevel = task.cognitiveLimit
+  const levels = buildLevelSequence(count, minLevel, maxLevel, task.entrySeason, task.rateOfChange)
   const schedule = layoutSchedule(count, 0, totalDurationMs)
 
   const pitstops: Pitstop[] = []
   for (let i = 0; i < count; i++) {
     const level = levels[i]
-    const kind = kindForLevel(i, count, level, task.cognitiveLimit, task.entrySeason)
+    const kind = kindForLevel(i, count, level, minLevel, maxLevel, task.entrySeason)
     const mapCoordinates = randomCoordinate(pitstops.map((p) => p.mapCoordinates))
     pitstops.push({
       id: generateId('pitstop'),

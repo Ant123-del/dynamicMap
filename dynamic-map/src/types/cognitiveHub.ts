@@ -58,6 +58,9 @@ export interface Task {
   id: string
   name: string
   durationMinutes: DurationMinutes
+  /** Minimum cognition needed to make progress on the task — the floor of the pacing range. */
+  minCognitiveLevel: CognitiveLevel
+  /** Upper cognitive load limit — the ceiling of the pacing range. */
   cognitiveLimit: CognitiveLevel
   entrySeason: Season
   rateOfChange: RateOfChange

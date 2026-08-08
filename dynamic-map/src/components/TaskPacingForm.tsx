@@ -14,9 +14,20 @@ interface TaskPacingFormProps {
 export function TaskPacingForm({ onStart }: TaskPacingFormProps) {
   const [name, setName] = useState('')
   const [durationMinutes, setDurationMinutes] = useState<DurationMinutes>(35)
+  const [minCognitiveLevel, setMinCognitiveLevel] = useState<CognitiveLevel>(2)
   const [cognitiveLimit, setCognitiveLimit] = useState<CognitiveLevel>(4)
   const [entrySeason, setEntrySeason] = useState<Season>(ENTRY_SEASONS[0])
   const [rateOfChange, setRateOfChange] = useState<RateOfChange>('Medium')
+
+  function handleMinChange(value: CognitiveLevel) {
+    setMinCognitiveLevel(value)
+    if (value > cognitiveLimit) setCognitiveLimit(value)
+  }
+
+  function handleMaxChange(value: CognitiveLevel) {
+    setCognitiveLimit(value)
+    if (value < minCognitiveLevel) setMinCognitiveLevel(value)
+  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -25,6 +36,7 @@ export function TaskPacingForm({ onStart }: TaskPacingFormProps) {
       id: generateId('task'),
       name: name.trim(),
       durationMinutes,
+      minCognitiveLevel,
       cognitiveLimit,
       entrySeason,
       rateOfChange,
@@ -52,7 +64,7 @@ export function TaskPacingForm({ onStart }: TaskPacingFormProps) {
         />
       </label>
 
-      <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-2">
+      <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-2">
         <label className="text-sm text-slate-300">
           Duration
           <select
@@ -63,21 +75,6 @@ export function TaskPacingForm({ onStart }: TaskPacingFormProps) {
             {DURATIONS.map((d) => (
               <option key={d} value={d}>
                 {d} min
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="text-sm text-slate-300">
-          Load limit
-          <select
-            value={cognitiveLimit}
-            onChange={(e) => setCognitiveLimit(Number(e.target.value) as CognitiveLevel)}
-            className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-2 py-2 text-slate-100 outline-none focus:border-teal-400"
-          >
-            {LEVELS.map((l) => (
-              <option key={l} value={l}>
-                Level {l}
               </option>
             ))}
           </select>
@@ -97,6 +94,44 @@ export function TaskPacingForm({ onStart }: TaskPacingFormProps) {
             ))}
           </select>
         </label>
+      </div>
+
+      <div className="mb-4">
+        <span className="block text-sm text-slate-300">Cognitive load range</span>
+        <p className="mb-2 text-xs text-slate-500">
+          The minimum cognition needed to make progress, up to the ceiling before you're overloaded.
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          <label className="text-sm text-slate-300">
+            Min load
+            <select
+              value={minCognitiveLevel}
+              onChange={(e) => handleMinChange(Number(e.target.value) as CognitiveLevel)}
+              className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-2 py-2 text-slate-100 outline-none focus:border-teal-400"
+            >
+              {LEVELS.map((l) => (
+                <option key={l} value={l}>
+                  Level {l}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="text-sm text-slate-300">
+            Max load
+            <select
+              value={cognitiveLimit}
+              onChange={(e) => handleMaxChange(Number(e.target.value) as CognitiveLevel)}
+              className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-2 py-2 text-slate-100 outline-none focus:border-teal-400"
+            >
+              {LEVELS.map((l) => (
+                <option key={l} value={l}>
+                  Level {l}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
       </div>
 
       <label className="mb-6 block text-sm text-slate-300">

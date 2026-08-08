@@ -37,6 +37,8 @@ export function handleDeviation(
   const totalDurationMs = existingPath.totalDurationMs
   const pastPath = existingPath.pitstops.filter((p) => p.scheduledTime < currentTime)
   const placedCoordinates = pastPath.map((p) => p.mapCoordinates)
+  const minLevel = Math.min(task.minCognitiveLevel, task.cognitiveLimit) as CognitiveLevel
+  const maxLevel = task.cognitiveLimit
 
   const strandingMarker: Pitstop = {
     id: generateId('pitstop'),
@@ -58,8 +60,8 @@ export function handleDeviation(
       const mapCoordinates = randomCoordinate(placedCoordinates)
       futurePitstops.push({
         id: generateId('pitstop'),
-        label: labelFor('end', 2),
-        level: 2,
+        label: labelFor('end', minLevel),
+        level: minLevel,
         season: newSeason,
         kind: 'end',
         scheduledTime: totalDurationMs,
@@ -75,7 +77,8 @@ export function handleDeviation(
     const schedule = layoutSchedule(futureCount + 1, currentTime, remainingMs).slice(1)
     const oscillationLevels = buildLevelSequence(
       futureCount,
-      task.cognitiveLimit,
+      minLevel,
+      maxLevel,
       newSeason,
       task.rateOfChange,
     )
@@ -86,13 +89,13 @@ export function handleDeviation(
       const level: CognitiveLevel = isLast
         ? oscillationLevels[i]
         : isGrounding
-          ? ((i % 2 === 0 ? 1 : 2) as CognitiveLevel)
+          ? ((i % 2 === 0 ? minLevel : Math.min(minLevel + 1, maxLevel)) as CognitiveLevel)
           : oscillationLevels[i]
       const kind = isLast
         ? 'end'
         : isGrounding
           ? 'grounding'
-          : kindForLevel(1, 3, level, task.cognitiveLimit, newSeason) // mid-range index/count => never 'start'/'end'
+          : kindForLevel(1, 3, level, minLevel, maxLevel, newSeason) // mid-range index/count => never 'start'/'end'
       const mapCoordinates = randomCoordinate(placedCoordinates)
       placedCoordinates.push(mapCoordinates)
 
