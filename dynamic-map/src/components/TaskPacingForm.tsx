@@ -9,14 +9,15 @@ const RATES: RateOfChange[] = ['Low', 'Medium', 'High']
 
 interface TaskPacingFormProps {
   onStart: (task: Task) => void
+  defaultSeason: Season
 }
 
-export function TaskPacingForm({ onStart }: TaskPacingFormProps) {
+export function TaskPacingForm({ onStart, defaultSeason }: TaskPacingFormProps) {
   const [name, setName] = useState('')
   const [durationMinutes, setDurationMinutes] = useState<DurationMinutes>(35)
   const [minCognitiveLevel, setMinCognitiveLevel] = useState<CognitiveLevel>(2)
   const [cognitiveLimit, setCognitiveLimit] = useState<CognitiveLevel>(4)
-  const [entrySeason, setEntrySeason] = useState<Season>(ENTRY_SEASONS[0])
+  const [entrySeason, setEntrySeason] = useState<Season>(defaultSeason)
   const [rateOfChange, setRateOfChange] = useState<RateOfChange>('Medium')
 
   function handleMinChange(value: CognitiveLevel) {

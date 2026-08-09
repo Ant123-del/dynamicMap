@@ -16,3 +16,25 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/*
+ * Radial pulse for the active map node. Animates the SVG `r`/`opacity`
+ * attributes directly instead of a CSS `transform: scale()` — SVG's
+ * default transform-origin is the viewBox corner, not the shape's own
+ * center, so a transform-based pulse skews outward toward that corner
+ * (worse the further a node sits from it) instead of expanding evenly.
+ */
+@keyframes pulse-ring {
+  0% {
+    r: 2.6;
+    opacity: 0.55;
+  }
+  100% {
+    r: 7;
+    opacity: 0;
+  }
+}
+
+.pulse-ring {
+  animation: pulse-ring 1.4s cubic-bezier(0, 0, 0.2, 1) infinite;
+}

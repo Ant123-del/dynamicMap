@@ -102,7 +102,7 @@ export function CognitiveIslandMap({ pitstops, activePitstopIndex }: CognitiveIs
             <g key={pitstop.id}>
               <title>{`${pitstop.label} · ${formatClock(pitstop.scheduledTime)}${status === 'next' ? ' (next stop)' : ''}`}</title>
               {status === 'active' && (
-                <circle cx={x} cy={y} r={3.2} fill="#2dd4bf" opacity={0.5} className="animate-ping" />
+                <circle cx={x} cy={y} r={2.6} fill="#2dd4bf" opacity={0.55} className="pulse-ring" />
               )}
               {status === 'next' && (
                 <circle

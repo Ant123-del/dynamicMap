@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { DeviationEvent, Season, SessionState, Task } from '../types/cognitiveHub'
-import { SESSION_STORAGE_KEY } from '../types/cognitiveHub'
+import { clearSession, subscribeToSession, writeSession } from '../firebase/session'
+import type {
+  DeviationEvent,
+  Season,
+  SessionState,
+  Task,
+  UserPreferences,
+} from '../types/cognitiveHub'
 import { generateId } from '../utils/id'
 import { generateInitialPath } from '../utils/pacingAlgorithm'
 import { handleDeviation } from '../utils/reactiveAlgorithm'
@@ -8,32 +14,34 @@ import { playEndChime, playStartChime } from '../utils/sound'
 
 const TICK_MS = 250
 
-function loadPersistedSession(): SessionState | null {
-  try {
-    const raw = localStorage.getItem(SESSION_STORAGE_KEY)
-    return raw ? (JSON.parse(raw) as SessionState) : null
-  } catch {
-    return null
-  }
-}
-
-function persistSession(session: SessionState | null): void {
-  try {
-    if (session) localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session))
-    else localStorage.removeItem(SESSION_STORAGE_KEY)
-  } catch {
-    // localStorage unavailable (private browsing / quota exceeded) — session just won't persist.
-  }
-}
-
-export function usePacingSession() {
-  const [session, setSession] = useState<SessionState | null>(() => loadPersistedSession())
+/**
+ * Session state lives in Firestore (`sessions/{uid}`), not localStorage, so it
+ * survives the machine shutting off and stays in sync across every device the
+ * user signs into. Firestore's offline persistence means writes/reads still
+ * resolve instantly from a local cache even without connectivity, syncing to
+ * the server once back online.
+ */
+export function usePacingSession(uid: string | null, preferences: UserPreferences) {
+  const [session, setSession] = useState<SessionState | null>(null)
+  const [loaded, setLoaded] = useState(false)
   const [now, setNow] = useState(() => Date.now())
   const intervalRef = useRef<number | null>(null)
+  const sessionRef = useRef<SessionState | null>(null)
+  sessionRef.current = session
 
   useEffect(() => {
-    persistSession(session)
-  }, [session])
+    if (!uid) {
+      setSession(null)
+      setLoaded(false)
+      return
+    }
+    setLoaded(false)
+    return subscribeToSession(uid, (next) => {
+      setSession(next)
+      setLoaded(true)
+      setNow(Date.now())
+    })
+  }, [uid])
 
   const elapsedTime = !session
     ? 0
@@ -78,57 +86,65 @@ export function usePacingSession() {
     return index
   })()
 
-  const startSession = useCallback((task: Task) => {
-    const path = generateInitialPath(task)
-    const startedAt = Date.now()
-    setSession({
-      task,
-      path,
-      deviations: [],
-      elapsedTime: 0,
-      startTime: startedAt,
-      isActive: true,
-      isPaused: false,
-    })
-    setNow(startedAt)
-    wasCompleteRef.current = false
-    playStartChime()
-  }, [])
+  const startSession = useCallback(
+    (task: Task) => {
+      if (!uid) return
+      const path = generateInitialPath(task, preferences)
+      const startedAt = Date.now()
+      const next: SessionState = {
+        task,
+        path,
+        deviations: [],
+        elapsedTime: 0,
+        startTime: startedAt,
+        isActive: true,
+        isPaused: false,
+      }
+      setNow(startedAt)
+      wasCompleteRef.current = false
+      playStartChime()
+      void writeSession(uid, next)
+    },
+    [uid, preferences],
+  )
 
   const pause = useCallback(() => {
-    setSession((prev) => {
-      if (!prev || !prev.isActive || prev.isPaused || prev.startTime === null) return prev
-      return {
-        ...prev,
-        elapsedTime: prev.elapsedTime + (Date.now() - prev.startTime),
-        startTime: null,
-        isPaused: true,
-      }
+    if (!uid) return
+    const prev = sessionRef.current
+    if (!prev || !prev.isActive || prev.isPaused || prev.startTime === null) return
+    void writeSession(uid, {
+      ...prev,
+      elapsedTime: prev.elapsedTime + (Date.now() - prev.startTime),
+      startTime: null,
+      isPaused: true,
     })
-  }, [])
+  }, [uid])
 
   const resume = useCallback(() => {
+    if (!uid) return
+    const prev = sessionRef.current
+    if (!prev || !prev.isActive || !prev.isPaused) return
     const resumedAt = Date.now()
-    setSession((prev) => {
-      if (!prev || !prev.isActive || !prev.isPaused) return prev
-      return { ...prev, startTime: resumedAt, isPaused: false }
-    })
     setNow(resumedAt)
-  }, [])
+    void writeSession(uid, { ...prev, startTime: resumedAt, isPaused: false })
+  }, [uid])
 
   const reset = useCallback(() => {
-    setSession(null)
-  }, [])
+    if (!uid) return
+    void clearSession(uid)
+  }, [uid])
 
-  const recordDeviation = useCallback((season: Season) => {
-    setSession((prev) => {
-      if (!prev || !prev.isActive) return prev
+  const recordDeviation = useCallback(
+    (season: Season) => {
+      if (!uid) return
+      const prev = sessionRef.current
+      if (!prev || !prev.isActive) return
       const currentElapsed =
         !prev.isPaused && prev.startTime !== null
           ? prev.elapsedTime + (Date.now() - prev.startTime)
           : prev.elapsedTime
 
-      const nextPath = handleDeviation(currentElapsed, season, prev.path, prev.task)
+      const nextPath = handleDeviation(currentElapsed, season, prev.path, prev.task, preferences)
       const strandingMarker = nextPath.pitstops.find(
         (p) => p.kind === 'stranding' && p.scheduledTime === currentElapsed,
       )
@@ -140,16 +156,18 @@ export function usePacingSession() {
         pitstopId: strandingMarker?.id ?? '',
       }
 
-      return {
+      void writeSession(uid, {
         ...prev,
         path: nextPath,
         deviations: [...prev.deviations, deviation],
-      }
-    })
-  }, [])
+      })
+    },
+    [uid, preferences],
+  )
 
   return {
     session,
+    loaded,
     elapsedTime,
     remainingTime,
     activePitstopIndex,

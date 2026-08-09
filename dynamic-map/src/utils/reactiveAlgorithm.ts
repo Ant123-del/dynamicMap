@@ -7,7 +7,14 @@ import {
   pitstopCountFor,
   randomCoordinate,
 } from './pacingAlgorithm'
-import type { CognitiveLevel, PacingPath, Pitstop, Season, Task } from '../types/cognitiveHub'
+import type {
+  CognitiveLevel,
+  PacingPath,
+  Pitstop,
+  Season,
+  Task,
+  UserPreferences,
+} from '../types/cognitiveHub'
 
 const MIN_REGENERATION_MS = 90_000
 
@@ -33,6 +40,7 @@ export function handleDeviation(
   newSeason: Season,
   existingPath: PacingPath,
   task: Task,
+  preferences: UserPreferences,
 ): PacingPath {
   const totalDurationMs = existingPath.totalDurationMs
   const pastPath = existingPath.pitstops.filter((p) => p.scheduledTime < currentTime)
@@ -74,13 +82,19 @@ export function handleDeviation(
     const groundingCount = Math.min(groundingCountFor(newSeason), futureCount - 1)
 
     // +1 so we can drop the leading point (which would land exactly on currentTime).
-    const schedule = layoutSchedule(futureCount + 1, currentTime, remainingMs).slice(1)
+    const schedule = layoutSchedule(
+      futureCount + 1,
+      currentTime,
+      remainingMs,
+      preferences.splitType,
+    ).slice(1)
     const oscillationLevels = buildLevelSequence(
       futureCount,
       minLevel,
       maxLevel,
       newSeason,
       task.rateOfChange,
+      preferences.cyclePattern,
     )
 
     for (let i = 0; i < futureCount; i++) {

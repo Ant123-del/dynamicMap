@@ -87,4 +87,24 @@ export interface SessionState {
   isPaused: boolean
 }
 
-export const SESSION_STORAGE_KEY = 'cognitiveHub.session.v1'
+/**
+ * Whether the cognitive-level loop oscillates up and back down within a cycle
+ * ('mirror', e.g. 1→2→3→2→1→2→3…) or sweeps up and resets to the floor each
+ * cycle ('ramp', e.g. 1→2→3→1→2→3…).
+ */
+export type CyclePattern = 'mirror' | 'ramp'
+
+/**
+ * How long each pacing segment lasts relative to the others: 'even' keeps
+ * segment durations roughly equal, 'negative' front-loads longer segments
+ * that shrink over the session, 'positive' starts short and lengthens.
+ */
+export type SplitType = 'even' | 'negative' | 'positive'
+
+export interface UserPreferences {
+  cyclePattern: CyclePattern
+  splitType: SplitType
+  /** Default entry season pre-filled on the task form — the emotional/energy state the user most often starts from. */
+  preferredSeason: Season
+  updatedAt: number
+}

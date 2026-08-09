@@ -1,13 +1,16 @@
 import { generateId } from './id'
 import type {
   CognitiveLevel,
+  CyclePattern,
   MapCoordinates,
   PacingPath,
   Pitstop,
   PitstopKind,
   RateOfChange,
   Season,
+  SplitType,
   Task,
+  UserPreferences,
 } from '../types/cognitiveHub'
 
 /** Island interior bounds (percentages of the map viewBox) that nodes may scatter within. */
@@ -77,18 +80,31 @@ function baseLevelForSeason(
   }
 }
 
-/** Builds the oscillating Level 2 -> 3 -> 4 -> 2 style loop, ranging between the min and max load. */
+/**
+ * Builds the cognitive-level sequence for a path, ranging between the min and max load.
+ * - 'mirror': oscillates up and back down within each cycle (e.g. 2 -> 3 -> 4 -> 3 -> 2 -> …).
+ * - 'ramp': sweeps from the floor to the ceiling and resets each cycle (e.g. 1 -> 2 -> 3 -> 1 -> 2 -> 3 -> …).
+ */
 export function buildLevelSequence(
   count: number,
   minLevel: CognitiveLevel,
   maxLevel: CognitiveLevel,
   entrySeason: Season,
   rateOfChange: RateOfChange,
+  cyclePattern: CyclePattern,
 ): CognitiveLevel[] {
+  const period = OSCILLATION_PERIOD_BY_RATE[rateOfChange]
+
+  if (cyclePattern === 'ramp') {
+    return Array.from({ length: count }, (_, i) => {
+      const phase = period <= 1 ? 0 : (i % period) / (period - 1)
+      return clampLevel(minLevel + phase * (maxLevel - minLevel), minLevel, maxLevel)
+    })
+  }
+
   const base = baseLevelForSeason(entrySeason, minLevel, maxLevel)
   const halfRange = Math.max((maxLevel - minLevel) / 2, 0.5)
   const amplitude = halfRange * AMPLITUDE_FRACTION_BY_RATE[rateOfChange]
-  const period = OSCILLATION_PERIOD_BY_RATE[rateOfChange]
 
   return Array.from({ length: count }, (_, i) => {
     const wave = base + amplitude * Math.sin((2 * Math.PI * i) / period)
@@ -133,34 +149,64 @@ export function pitstopCountFor(durationMinutes: number, rateOfChange: RateOfCha
   return Math.min(16, Math.max(4, count))
 }
 
+/** How far a segment's weight swings from the average (1) at the extremes of a negative/positive split. */
+const SPLIT_SKEW = 0.6
+
+/** Per-segment duration weights (averaging to 1, summing to `segments`) for a given split style. */
+function segmentWeights(segments: number, splitType: SplitType): number[] {
+  if (segments <= 1 || splitType === 'even') return Array(segments).fill(1)
+  return Array.from({ length: segments }, (_, i) => {
+    const t = i / (segments - 1) // 0 (first segment) -> 1 (last segment)
+    return splitType === 'negative'
+      ? 1 + SPLIT_SKEW - t * 2 * SPLIT_SKEW // long segments first, shrinking
+      : 1 - SPLIT_SKEW + t * 2 * SPLIT_SKEW // short segments first, growing
+  })
+}
+
 /**
- * Lays out scheduledTime offsets (ms) evenly across [startMs, startMs + durationMs],
- * with mild organic jitter, while preserving monotonic ordering and a minimum gap.
+ * Lays out scheduledTime offsets (ms) across [startMs, startMs + durationMs], with mild
+ * organic jitter, shaped by `splitType` (even/negative/positive segment durations) while
+ * preserving monotonic ordering, a minimum gap, and the exact total duration.
  */
-export function layoutSchedule(count: number, startMs: number, durationMs: number): number[] {
+export function layoutSchedule(
+  count: number,
+  startMs: number,
+  durationMs: number,
+  splitType: SplitType,
+): number[] {
   if (count === 1) return [startMs]
-  const spacing = durationMs / (count - 1)
-  const minGap = spacing * 0.4
-  const times: number[] = []
-  for (let i = 0; i < count; i++) {
-    const base = startMs + i * spacing
-    const jitter = i === 0 || i === count - 1 ? 0 : (Math.random() - 0.5) * spacing * 0.3
-    const time = base + jitter
-    const prev = times[i - 1]
-    times.push(prev === undefined ? time : Math.max(time, prev + minGap))
+  const segments = count - 1
+  const weights = segmentWeights(segments, splitType)
+  const rawDurations = weights.map((w) => (w / segments) * durationMs)
+  const minGap = Math.min(...rawDurations) * 0.3
+
+  const times: number[] = [startMs]
+  for (let i = 0; i < segments; i++) {
+    const isLastSegment = i === segments - 1
+    const jitter = isLastSegment ? 0 : (Math.random() - 0.5) * rawDurations[i] * 0.25
+    const candidate = times[times.length - 1] + rawDurations[i] + jitter
+    const prev = times[times.length - 1]
+    times.push(Math.max(candidate, prev + minGap))
   }
   // Clamp the final point back to the exact end so the total duration is preserved.
   times[times.length - 1] = startMs + durationMs
   return times
 }
 
-export function generateInitialPath(task: Task): PacingPath {
+export function generateInitialPath(task: Task, preferences: UserPreferences): PacingPath {
   const totalDurationMs = task.durationMinutes * 60_000
   const count = pitstopCountFor(task.durationMinutes, task.rateOfChange)
   const minLevel = Math.min(task.minCognitiveLevel, task.cognitiveLimit) as CognitiveLevel
   const maxLevel = task.cognitiveLimit
-  const levels = buildLevelSequence(count, minLevel, maxLevel, task.entrySeason, task.rateOfChange)
-  const schedule = layoutSchedule(count, 0, totalDurationMs)
+  const levels = buildLevelSequence(
+    count,
+    minLevel,
+    maxLevel,
+    task.entrySeason,
+    task.rateOfChange,
+    preferences.cyclePattern,
+  )
+  const schedule = layoutSchedule(count, 0, totalDurationMs, preferences.splitType)
 
   const pitstops: Pitstop[] = []
   for (let i = 0; i < count; i++) {
