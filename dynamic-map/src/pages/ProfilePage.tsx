@@ -1,4 +1,5 @@
 import { PreferencesForm, type PreferencesFormValue } from '../components/PreferencesForm'
+import { WatchPairingCard } from '../components/WatchPairingCard'
 import type { UserPreferences } from '../types/cognitiveHub'
 
 interface ProfilePageProps {
@@ -26,7 +27,10 @@ export function ProfilePage({ preferences, onSave, onBack }: ProfilePageProps) {
           </button>
           <h1 className="text-xl font-semibold text-slate-100">Pacing preferences</h1>
         </div>
-        <PreferencesForm initial={preferences} variant="profile" onSave={handleSave} onCancel={onBack} />
+        <div className="space-y-6">
+          <PreferencesForm initial={preferences} variant="profile" onSave={handleSave} onCancel={onBack} />
+          <WatchPairingCard />
+        </div>
       </div>
     </div>
   )

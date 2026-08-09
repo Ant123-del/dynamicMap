@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>818288155625-g9bs8ch1j0qfspglgum05q4h4ienb5mt.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.818288155625-g9bs8ch1j0qfspglgum05q4h4ienb5mt</string>
+	<key>API_KEY</key>
+	<string>AIzaSyAIhP350I2TZ6awnF7-4XVbr6qwLlnXAUk</string>
+	<key>GCM_SENDER_ID</key>
+	<string>818288155625</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.antonioflores.CognitivePacingAtlasWatch</string>
+	<key>PROJECT_ID</key>
+	<string>cognitive-pacing-atlas</string>
+	<key>STORAGE_BUCKET</key>
+	<string>cognitive-pacing-atlas.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:818288155625:ios:5484bca4f35f3d91c00978</string>
+</dict>
+</plist>
