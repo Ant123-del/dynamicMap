@@ -79,6 +79,8 @@ struct WatchTask: Codable, Equatable {
     var entrySeason: Season
     var rateOfChange: RateOfChange
     var createdAt: Double
+    /// Optional sticky-note prompt to keep front-of-mind for the session — visible on every device.
+    var guidingQuestion: String?
 }
 
 struct DeviationEvent: Codable, Identifiable, Equatable {

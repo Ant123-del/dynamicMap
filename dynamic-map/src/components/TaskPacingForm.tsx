@@ -19,6 +19,18 @@ export function TaskPacingForm({ onStart, defaultSeason }: TaskPacingFormProps) 
   const [cognitiveLimit, setCognitiveLimit] = useState<CognitiveLevel>(4)
   const [entrySeason, setEntrySeason] = useState<Season>(defaultSeason)
   const [rateOfChange, setRateOfChange] = useState<RateOfChange>('Medium')
+  const [guidingQuestion, setGuidingQuestion] = useState('')
+  const [pasteError, setPasteError] = useState<string | null>(null)
+
+  async function handlePaste() {
+    setPasteError(null)
+    try {
+      const text = await navigator.clipboard.readText()
+      setGuidingQuestion(text) // replaces whatever was there, not appended
+    } catch {
+      setPasteError("Couldn't read the clipboard — paste manually instead (⌘V / Ctrl+V).")
+    }
+  }
 
   function handleMinChange(value: CognitiveLevel) {
     setMinCognitiveLevel(value)
@@ -42,6 +54,7 @@ export function TaskPacingForm({ onStart, defaultSeason }: TaskPacingFormProps) 
       entrySeason,
       rateOfChange,
       createdAt: Date.now(),
+      ...(guidingQuestion.trim() ? { guidingQuestion: guidingQuestion.trim() } : {}),
     })
   }
 
@@ -149,6 +162,32 @@ export function TaskPacingForm({ onStart, defaultSeason }: TaskPacingFormProps) 
           ))}
         </select>
       </label>
+
+      <div className="mb-6">
+        <div className="mb-1 flex items-center justify-between">
+          <span className="text-sm text-slate-300">
+            Guiding question <span className="text-slate-500">(optional)</span>
+          </span>
+          <button
+            type="button"
+            onClick={handlePaste}
+            className="text-xs font-medium text-teal-400 transition hover:text-teal-300"
+          >
+            Paste
+          </button>
+        </div>
+        <p className="mb-2 text-xs text-slate-500">
+          A sticky note that stays visible for the whole session, on every device.
+        </p>
+        <textarea
+          value={guidingQuestion}
+          onChange={(e) => setGuidingQuestion(e.target.value)}
+          placeholder="A question to keep front-of-mind this session…"
+          rows={3}
+          className="w-full resize-y rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-teal-400"
+        />
+        {pasteError && <p className="mt-1 text-xs text-rose-400">{pasteError}</p>}
+      </div>
 
       <button
         type="submit"

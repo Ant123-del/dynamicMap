@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		0A1915EAF450C7A9FE283FF5 /* Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81F41884866BE44C41F86B26 /* Utils.swift */; };
+		10F7BC262745742B2315B7AB /* NoteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B003D62495C69D0DB20FB2B /* NoteView.swift */; };
 		16FC0434FE03B339A628592F /* AuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48FF2C38A48CF440FA4C0C69 /* AuthManager.swift */; };
 		19BF4EAA0A0A2A47F2297088 /* SignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C90FED95F231C9AA679D373 /* SignInView.swift */; };
 		2C5F62381BD6D8B9E65691C2 /* CognitivePacingAtlasWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD6C2F0FA2E11B36E1721D4A /* CognitivePacingAtlasWatchApp.swift */; };
@@ -31,6 +32,7 @@
 
 /* Begin PBXFileReference section */
 		15210E6D3028B33439511519 /* FirestoreREST.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreREST.swift; sourceTree = "<group>"; };
+		1B003D62495C69D0DB20FB2B /* NoteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteView.swift; sourceTree = "<group>"; };
 		2A2D5A28FBE973A1D9AEB57D /* MapPageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapPageView.swift; sourceTree = "<group>"; };
 		400BCD32DA07F62556F27774 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		48FF2C38A48CF440FA4C0C69 /* AuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthManager.swift; sourceTree = "<group>"; };
@@ -90,6 +92,7 @@
 				BBD216AD4810975EFC9A029C /* CrisisView.swift */,
 				2A2D5A28FBE973A1D9AEB57D /* MapPageView.swift */,
 				CB715AF0E91950C6FEA0778F /* MessageView.swift */,
+				1B003D62495C69D0DB20FB2B /* NoteView.swift */,
 				94836C450D3C6B4024EB8258 /* PagerView.swift */,
 				400BCD32DA07F62556F27774 /* RootView.swift */,
 				5C90FED95F231C9AA679D373 /* SignInView.swift */,
@@ -214,6 +217,7 @@
 				895A09CF8D3C83C2F0002A06 /* FirestoreREST.swift in Sources */,
 				921371F3565889FF4B8207FE /* MapPageView.swift in Sources */,
 				5021E3A1CDF79F9FEF090493 /* MessageView.swift in Sources */,
+				10F7BC262745742B2315B7AB /* NoteView.swift in Sources */,
 				C8EBFE88958D180BF4B3D789 /* PacingAlgorithm.swift in Sources */,
 				C0D9D864681676F22F61D02E /* PagerView.swift in Sources */,
 				54830919FE4213258FAE4474 /* PreferencesStore.swift in Sources */,

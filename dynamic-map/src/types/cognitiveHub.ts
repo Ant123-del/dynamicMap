@@ -65,6 +65,8 @@ export interface Task {
   entrySeason: Season
   rateOfChange: RateOfChange
   createdAt: number
+  /** Optional sticky-note prompt to keep front-of-mind for the session — visible on every device. */
+  guidingQuestion?: string
 }
 
 export interface DeviationEvent {

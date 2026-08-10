@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { ActiveTimerPanel } from './components/ActiveTimerPanel'
 import { CognitiveIslandMap } from './components/CognitiveIslandMap'
 import { DeviationLog } from './components/DeviationLog'
+import { GuidingQuestionNote } from './components/GuidingQuestionNote'
 import { PreferencesForm } from './components/PreferencesForm'
 import { StrandedPanel } from './components/StrandedPanel'
 import { TaskPacingForm } from './components/TaskPacingForm'
@@ -83,6 +84,9 @@ function AppShell({ uid, photoURL, preferences, onSignOut, onOpenProfile }: AppS
         ) : (
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
             <div className="flex flex-col items-center gap-6">
+              {session.task.guidingQuestion && (
+                <GuidingQuestionNote question={session.task.guidingQuestion} />
+              )}
               <ActiveTimerPanel
                 session={session}
                 elapsedTime={elapsedTime}

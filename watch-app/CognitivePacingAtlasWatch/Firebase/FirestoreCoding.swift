@@ -75,7 +75,7 @@ extension PacingPath {
 
 extension WatchTask {
     var firestoreFields: [String: Any] {
-        [
+        var fields: [String: Any] = [
             "id": FirestoreValue.string(id),
             "name": FirestoreValue.string(name),
             "durationMinutes": FirestoreValue.double(Double(durationMinutes)),
@@ -85,6 +85,10 @@ extension WatchTask {
             "rateOfChange": FirestoreValue.string(rateOfChange.rawValue),
             "createdAt": FirestoreValue.double(createdAt),
         ]
+        if let guidingQuestion {
+            fields["guidingQuestion"] = FirestoreValue.string(guidingQuestion)
+        }
+        return fields
     }
 
     static func decode(_ fields: [String: Any]) -> WatchTask? {
@@ -104,7 +108,8 @@ extension WatchTask {
         return WatchTask(
             id: id, name: name, durationMinutes: Int(durationMinutesD),
             minCognitiveLevel: Int(minLevelD), cognitiveLimit: Int(maxLevelD),
-            entrySeason: season, rateOfChange: rate, createdAt: createdAt
+            entrySeason: season, rateOfChange: rate, createdAt: createdAt,
+            guidingQuestion: FirestoreValue.asString(fields["guidingQuestion"])
         )
     }
 }
