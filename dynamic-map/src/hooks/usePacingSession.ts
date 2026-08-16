@@ -49,15 +49,46 @@ export function usePacingSession(uid: string | null, preferences: UserPreference
       ? session.elapsedTime + (now - session.startTime)
       : session.elapsedTime
 
-  const totalDurationMs = session?.path.totalDurationMs ?? 0
-  const remainingTime = Math.max(totalDurationMs - elapsedTime, 0)
-  const isComplete = session !== null && elapsedTime >= totalDurationMs
+  const phase = session?.phase ?? 'task'
+  const lapCount = session?.lapCount ?? 0
+  const phaseDurationMs = !session
+    ? 0
+    : session.phase === 'break'
+      ? session.breakDurationMs
+      : session.path.totalDurationMs
+  const remainingTime = Math.max(phaseDurationMs - elapsedTime, 0)
+  const isComplete = session !== null && elapsedTime >= phaseDurationMs
 
   const wasCompleteRef = useRef(isComplete)
   useEffect(() => {
-    if (isComplete && !wasCompleteRef.current) playEndChime()
+    if (isComplete && !wasCompleteRef.current) {
+      playEndChime()
+      const prev = sessionRef.current
+      if (uid && prev) {
+        const nextStart = Date.now()
+        if (prev.phase === 'task') {
+          void writeSession(uid, {
+            ...prev,
+            phase: 'break',
+            breakDurationMs: preferences.breakMinutes * 60_000,
+            lapCount: prev.lapCount + 1,
+            elapsedTime: 0,
+            startTime: nextStart,
+          })
+        } else {
+          playStartChime()
+          void writeSession(uid, {
+            ...prev,
+            phase: 'task',
+            path: generateInitialPath(prev.task, preferences),
+            elapsedTime: 0,
+            startTime: nextStart,
+          })
+        }
+      }
+    }
     wasCompleteRef.current = isComplete
-  }, [isComplete])
+  }, [isComplete, uid, preferences])
 
   useEffect(() => {
     const shouldTick = session?.isActive && !session.isPaused && !isComplete
@@ -78,6 +109,7 @@ export function usePacingSession(uid: string | null, preferences: UserPreference
   const activePitstopIndex = (() => {
     if (!session) return -1
     const { pitstops } = session.path
+    if (session.phase === 'break') return pitstops.length - 1
     let index = -1
     for (let i = 0; i < pitstops.length; i++) {
       if (pitstops[i].scheduledTime <= elapsedTime) index = i
@@ -99,6 +131,9 @@ export function usePacingSession(uid: string | null, preferences: UserPreference
         startTime: startedAt,
         isActive: true,
         isPaused: false,
+        phase: 'task',
+        breakDurationMs: preferences.breakMinutes * 60_000,
+        lapCount: 0,
       }
       setNow(startedAt)
       wasCompleteRef.current = false
@@ -170,6 +205,8 @@ export function usePacingSession(uid: string | null, preferences: UserPreference
     loaded,
     elapsedTime,
     remainingTime,
+    phase,
+    lapCount,
     activePitstopIndex,
     isComplete,
     startSession,

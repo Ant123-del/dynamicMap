@@ -2,8 +2,11 @@ import { useState } from 'react'
 import type { CognitiveLevel, DurationMinutes, RateOfChange, Season, Task } from '../types/cognitiveHub'
 import { ENTRY_SEASONS } from '../types/cognitiveHub'
 import { generateId } from '../utils/id'
+import { MinuteStepper } from './MinuteStepper'
 
-const DURATIONS: DurationMinutes[] = [17, 35, 50]
+const DURATION_MIN = 5
+const DURATION_MAX = 120
+const DURATION_STEP = 5
 const LEVELS: CognitiveLevel[] = [1, 2, 3, 4, 5]
 const RATES: RateOfChange[] = ['Low', 'Medium', 'High']
 
@@ -78,22 +81,18 @@ export function TaskPacingForm({ onStart, defaultSeason }: TaskPacingFormProps) 
         />
       </label>
 
-      <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-2">
-        <label className="text-sm text-slate-300">
-          Duration
-          <select
-            value={durationMinutes}
-            onChange={(e) => setDurationMinutes(Number(e.target.value) as DurationMinutes)}
-            className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-2 py-2 text-slate-100 outline-none focus:border-teal-400"
-          >
-            {DURATIONS.map((d) => (
-              <option key={d} value={d}>
-                {d} min
-              </option>
-            ))}
-          </select>
-        </label>
+      <div className="mb-4">
+        <MinuteStepper
+          label="Duration"
+          value={durationMinutes}
+          onChange={setDurationMinutes}
+          min={DURATION_MIN}
+          max={DURATION_MAX}
+          step={DURATION_STEP}
+        />
+      </div>
 
+      <div className="mb-4">
         <label className="text-sm text-slate-300">
           Rate
           <select

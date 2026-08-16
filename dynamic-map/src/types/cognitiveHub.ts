@@ -1,6 +1,7 @@
 export type CognitiveLevel = 1 | 2 | 3 | 4 | 5
 
-export type DurationMinutes = 17 | 35 | 50
+/** Minutes, always a multiple of 5 (picked via the duration stepper). */
+export type DurationMinutes = number
 
 export type RateOfChange = 'Low' | 'Medium' | 'High'
 
@@ -79,6 +80,9 @@ export interface DeviationEvent {
 
 export type PitstopStatus = 'past' | 'active' | 'next' | 'future' | 'deviation'
 
+/** 'task' is the pacing session itself; 'break' is the rest period that follows each completed lap. */
+export type SessionPhase = 'task' | 'break'
+
 export interface SessionState {
   task: Task
   path: PacingPath
@@ -87,6 +91,11 @@ export interface SessionState {
   startTime: number | null
   isActive: boolean
   isPaused: boolean
+  phase: SessionPhase
+  /** Length of the break phase in ms, captured from preferences when the break begins. */
+  breakDurationMs: number
+  /** Number of task laps completed (i.e. how many times the timer has run out and looped). */
+  lapCount: number
 }
 
 /**
@@ -108,5 +117,7 @@ export interface UserPreferences {
   splitType: SplitType
   /** Default entry season pre-filled on the task form — the emotional/energy state the user most often starts from. */
   preferredSeason: Season
+  /** Length of the break that follows each completed lap, in minutes. */
+  breakMinutes: number
   updatedAt: number
 }

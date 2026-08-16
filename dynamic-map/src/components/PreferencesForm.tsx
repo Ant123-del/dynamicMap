@@ -1,6 +1,11 @@
 import { useState } from 'react'
 import type { CyclePattern, Season, SplitType, UserPreferences } from '../types/cognitiveHub'
 import { ENTRY_SEASONS } from '../types/cognitiveHub'
+import { MinuteStepper } from './MinuteStepper'
+
+const BREAK_MIN = 5
+const BREAK_MAX = 60
+const BREAK_STEP = 5
 
 interface OptionDef<T extends string> {
   value: T
@@ -96,12 +101,14 @@ export interface PreferencesFormValue {
   cyclePattern: CyclePattern
   splitType: SplitType
   preferredSeason: Season
+  breakMinutes: number
 }
 
 const DEFAULT_VALUE: PreferencesFormValue = {
   cyclePattern: 'mirror',
   splitType: 'even',
   preferredSeason: ENTRY_SEASONS[0],
+  breakMinutes: 5,
 }
 
 interface PreferencesFormProps {
@@ -118,6 +125,7 @@ export function PreferencesForm({ initial, variant, onSave, onCancel }: Preferen
           cyclePattern: initial.cyclePattern,
           splitType: initial.splitType,
           preferredSeason: initial.preferredSeason,
+          breakMinutes: initial.breakMinutes,
         }
       : DEFAULT_VALUE,
   )
@@ -174,6 +182,21 @@ export function PreferencesForm({ initial, variant, onSave, onCancel }: Preferen
             />
           ))}
         </div>
+      ),
+    },
+    {
+      key: 'break',
+      question: 'How long should your break be between laps?',
+      hint: 'When a lap finishes, a break timer starts automatically for this long, then loops back into the next lap — until you end the session.',
+      content: (
+        <MinuteStepper
+          label="Break length"
+          value={value.breakMinutes}
+          onChange={(breakMinutes) => setValue((v) => ({ ...v, breakMinutes }))}
+          min={BREAK_MIN}
+          max={BREAK_MAX}
+          step={BREAK_STEP}
+        />
       ),
     },
   ]

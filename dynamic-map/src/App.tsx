@@ -27,6 +27,8 @@ function AppShell({ uid, photoURL, preferences, onSignOut, onOpenProfile }: AppS
     loaded,
     elapsedTime,
     remainingTime,
+    phase,
+    lapCount,
     activePitstopIndex,
     isComplete,
     startSession,
@@ -91,6 +93,8 @@ function AppShell({ uid, photoURL, preferences, onSignOut, onOpenProfile }: AppS
                 session={session}
                 elapsedTime={elapsedTime}
                 remainingTime={remainingTime}
+                phase={phase}
+                lapCount={lapCount}
                 activePitstopIndex={activePitstopIndex}
                 isComplete={isComplete}
                 onPause={pause}
@@ -98,7 +102,7 @@ function AppShell({ uid, photoURL, preferences, onSignOut, onOpenProfile }: AppS
                 onReset={reset}
               />
               <StrandedPanel
-                disabled={!session.isActive || session.isPaused || isComplete}
+                disabled={!session.isActive || session.isPaused || isComplete || phase === 'break'}
                 onStranded={recordDeviation}
               />
               <DeviationLog deviations={session.deviations} />

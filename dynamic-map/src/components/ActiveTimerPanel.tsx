@@ -6,6 +6,8 @@ interface ActiveTimerPanelProps {
   session: SessionState
   elapsedTime: number
   remainingTime: number
+  phase: 'task' | 'break'
+  lapCount: number
   activePitstopIndex: number
   isComplete: boolean
   onPause: () => void
@@ -25,13 +27,17 @@ export function ActiveTimerPanel({
   session,
   elapsedTime,
   remainingTime,
+  phase,
+  lapCount,
   activePitstopIndex,
   isComplete,
   onPause,
   onResume,
   onReset,
 }: ActiveTimerPanelProps) {
-  const progress = Math.min(1, elapsedTime / session.path.totalDurationMs)
+  const isBreak = phase === 'break'
+  const phaseDurationMs = isBreak ? session.breakDurationMs : session.path.totalDurationMs
+  const progress = Math.min(1, Math.max(0, elapsedTime / phaseDurationMs))
 
   return (
     <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900/60 p-6 shadow-xl shadow-black/20">
@@ -42,16 +48,27 @@ export function ActiveTimerPanel({
         </span>
       </div>
 
+      <div className="mb-4 flex items-center justify-between">
+        <span
+          className={`rounded-full px-2.5 py-1 text-xs font-medium uppercase tracking-wide ${
+            isBreak ? 'bg-sky-500/10 text-sky-300' : 'bg-teal-500/10 text-teal-300'
+          }`}
+        >
+          {isBreak ? 'Break' : 'Working'}
+        </span>
+        <span className="text-xs text-slate-500">
+          Laps done <span className="font-mono text-slate-300">{lapCount}</span>
+        </span>
+      </div>
+
       <div className="my-6 text-center">
         <div className="font-mono text-5xl font-semibold tabular-nums text-slate-50">
           {formatClock(remainingTime)}
         </div>
-        <div className="mt-1 text-xs text-slate-500">
-          {isComplete ? 'Session complete' : `${formatClock(elapsedTime)} elapsed`}
-        </div>
+        <div className="mt-1 text-xs text-slate-500">{`${formatClock(elapsedTime)} elapsed`}</div>
         <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
           <div
-            className="h-full bg-teal-400 transition-[width] duration-300"
+            className={`h-full transition-[width] duration-300 ${isBreak ? 'bg-sky-400' : 'bg-teal-400'}`}
             style={{ width: `${progress * 100}%` }}
           />
         </div>
